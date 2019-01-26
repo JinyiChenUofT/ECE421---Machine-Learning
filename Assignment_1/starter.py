@@ -33,8 +33,12 @@ def MSE(W, b, x, y, reg):
     return mean_uqared_error
 
 
-#def gradMSE(W, b, x, y, reg):
+def gradMSE(W, b, x, y, reg):
+    W_tranpose = np.transpose(W)
+    
+    x_hat = tf.matmul(tf.matmul(np.linalg.inv(tf.matmul(W_tranpose,W)),W_tranpose),b)
 
+    return x_hat
 
 #def crossEntropyLoss(W, b, x, y, reg):
     # Your implementation here
