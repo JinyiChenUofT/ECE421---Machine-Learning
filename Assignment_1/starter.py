@@ -251,8 +251,43 @@ def crossEntropyLoss(W, b, x, y, reg):
     return CE
 
 
-def gradCE(W, b, x, y, reg):
+#def gradCE(W, b, x, y, reg):
+def buildGraph(beta1=None, beta2=None, epsilon=None, lossType=None, learning_rate=None):
+#def buildGraph(lossType=None):
     
+    W = tf.Variable(tf.truncated_normal(shape=[784,1], stddev=0.5), name='weights')
+    b = tf.Variable(tf.zeros(1), name='biases')
+    X = tf.placeholder(tf.float32, [None, 784], name='input_x')
+    y_target = tf.placeholder(tf.float32, [None,1], name='target_y')
+
+    # Graph definition
+    y_predicted = tf.matmul(X,W) + b
+    tf.set_random_seed(421)
+    loss = 0.0
+
+    if lossType == "MSE":
+        loss = tf.reduce_mean(tf.reduce_mean(tf.square(y_predicted - y_target), 
+                                                reduction_indices=1, 
+                                                name='squared_error'), 
+                                  name='mean_squared_error')
+        loss = loss/2
+
+    elif lossType == "CE":
+        y_hat = 1/(1+tf.exp(tf.matmul(X,W)+b))
+        loss = tf.reduce_mean(-y_target*tf.log(y_hat)-(1-y_target)*tf.log(1-y_hat),
+                                  name='cross_entropy_loss')
+        loss = loss/2
+
+    optimizer = tf.train.AdamOptimizer(learning_rate = 0.001)
+    train = optimizer.minimize(loss)
+
+    
+    return W, b, X, y_target, y_predicted, loss, train
+
+
+def accuracy(predictions, labels):
+  return (100.0 * np.sum(np.argmax(predictions, 1) == np.argmax(labels, 1))
+          / predictions.shape[0])
 
 #def grad_descent(W, b, trainingData, trainingLabels, alpha, iterations, reg, EPS):
     # Your implementation here
