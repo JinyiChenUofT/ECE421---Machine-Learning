@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from numpy import linalg as LA
 import json
 from enum import Enum
-
+import time
 
 class ModelType(Enum):
     TrainModel = 1
@@ -200,39 +200,109 @@ def grad_descent(W, b, train_x, train_y, val_x, val_y, test_x, test_y, alpha, ep
     plt.legend(['alpha=0.005', 'alpha=0.001',
                 'alpha=0.0001'], loc='upper right')
     plt.show()
-    '''
-    if (model == ModelType.TrainModel):
-        print ("Trainning model\n")
-        plt.figure(1)
-        plt.title("trainning loss set")
-        plt.plot(loss_set)
-        pic_name = repr(alpha) + "training_loss.png"
-        plt.savefig(pic_name)
-        plt.xlabel("epochs")
-        plt.ylabel("loss")
-        plt.show()
-    elif(model == ModelType.ValidationModel):
-        print ("Validation model")
-        plt.figure(2)
-        plt.title("Validation loss set")
-        plt.plot(loss_set)
-        pic_name = repr(alpha) + "validation_loss.png"
-        plt.savefig(pic_name)
-        plt.xlabel("epochs")
-        plt.ylabel("loss")
-        plt.show()
-    elif(model == ModelType.TestModel):
-        print ("Test model")
-        plt.figure(3)
-        plt.title("Test loss set")
-        plt.plot(loss_set)
-        pic_name = repr(alpha) + "test_loss.png"
-        plt.savefig(pic_name)
-        plt.xlabel("epochs")
-        plt.ylabel("loss")
-        plt.show()
-    '''
 
+
+
+def grad_descent(W, b, train_x, train_y, val_x, val_y, test_x, test_y, alpha, epochs, reg, error_tol):
+    i = 0
+    W1 = W2 = W3 = W
+    b1 = b2 = b3 = b
+    train_loss_set1 = []
+    train_loss_set2 = []
+    train_loss_set3 = []
+    val_loss_set1 = []
+    val_loss_set2 = []
+    val_loss_set3 = []
+    test_loss_set1 = []
+    test_loss_set2 = []
+    test_loss_set3 = []
+    w_step_size = 0
+    alpha2 = 0.001
+    alpha3 = 0.0001
+
+    # while i < epochs and abs(np.linalg.norm(w_step_size))<=error_tol:
+    while i < epochs:
+        grad_w1, grad_b1 = gradMSE(W1, b1, train_x, train_y, reg)
+        grad_w2, grad_b2 = gradMSE(W2, b2, val_x, val_y, reg)
+        grad_w3, grad_b3 = gradMSE(W3, b3, test_x, test_y, reg)
+
+        w_step_size1 = alpha * grad_w1
+        b_step_size1 = alpha * grad_b1
+        W1 = W1 - w_step_size1
+        b1 = b1 - b_step_size1
+
+        w_step_size2 = alpha2 * grad_w2
+        b_step_size2 = alpha2 * grad_b2
+        W2 = W2 - w_step_size2
+        b2 = b2 - b_step_size2
+
+        w_step_size3 = alpha3 * grad_w3
+        b_step_size3 = alpha3 * grad_b3
+        W3 = W3 - w_step_size3
+        b3 = b3 - b_step_size3
+
+        train_mse1 = MSE(W1, b1, train_x, train_y, reg)
+        val_mse1 = MSE(W1, b1, val_x, val_y, reg)
+        test_mse1 = MSE(W1, b1, test_x, test_y, reg)
+        train_loss_set1.append(train_mse1)
+        val_loss_set1.append(val_mse1)
+        test_loss_set1.append(test_mse1)
+
+        train_mse2 = MSE(W2, b2, val_x, val_y, reg)
+        val_mse2 = MSE(W2, b2, val_x, val_y, reg)
+        test_mse2 = MSE(W2, b2, test_x, test_y, reg)
+        train_loss_set2.append(train_mse2)
+        val_loss_set2.append(val_mse2)
+        test_loss_set2.append(test_mse2)
+
+        train_mse3 = MSE(W3, b3, train_x, train_y, reg)
+        val_mse3 = MSE(W3, b3, val_x, val_y, reg)
+        test_mse3 = MSE(W3, b3, test_x, test_y, reg)
+        train_loss_set3.append(train_mse3)
+        val_loss_set3.append(val_mse3)
+        test_loss_set3.append(test_mse3)
+
+        i = i + 1
+
+    print("Trainning model\n")
+    plt.figure(1)
+    plt.title("trainning loss set: ephocs=5000 reg=0")
+    plt.plot(train_loss_set1)
+    plt.plot(train_loss_set2)
+    plt.plot(train_loss_set3)
+    pic_name = "training_loss.png"
+    plt.savefig(pic_name)
+    plt.xlabel("epochs")
+    plt.ylabel("loss")
+    plt.legend(['alpha=0.005', 'alpha=0.001',
+                'alpha=0.0001'], loc='upper right')
+
+    print("Validation model")
+    plt.figure(2)
+    plt.title("Validation loss set: ephocs=5000 reg=0")
+    plt.plot(val_loss_set1)
+    plt.plot(val_loss_set2)
+    plt.plot(val_loss_set3)
+    pic_name = "validation_loss.png"
+    plt.savefig(pic_name)
+    plt.xlabel("epochs")
+    plt.ylabel("loss")
+    plt.legend(['alpha=0.005', 'alpha=0.001',
+                'alpha=0.0001'], loc='upper right')
+
+    print("Test model")
+    plt.figure(3)
+    plt.title("Test loss set: ephocs=5000 reg=0")
+    plt.plot(test_loss_set1)
+    plt.plot(test_loss_set2)
+    plt.plot(test_loss_set3)
+    pic_name = "test_loss.png"
+    plt.savefig(pic_name)
+    plt.xlabel("epochs")
+    plt.ylabel("loss")
+    plt.legend(['alpha=0.005', 'alpha=0.001',
+                'alpha=0.0001'], loc='upper right')
+    plt.show()
     return W, b
 
 
@@ -246,21 +316,85 @@ def plot_loss(W, b, train_x, train_y, val_x,val_y, test_x, test_y, alpha, epochs
 
 
 def crossEntropyLoss(W, b, x, y, reg):
-    N = y.shape[0]
+    Loss=0
+    N= y.shape[0]
     W_tranpose = np.transpose(W)
-    y_hat = 1/(1+np.exp(np.matmul(x, W_tranpose)+b))
+    yn=1/(1+np.exp(-np.dot(x,W_tranpose)-b))   
+    Loss=np.mean(-y*np.log(yn)-(1-y)*np.log(1-yn))
+        
+    regularizer=reg/2 * np.square(np.matmul(W, W_tranpose))
 
-    # loss term
-    loss_term = np.mean(-y*np.log(y_hat)-(1-y)*np.log(1-y_hat))
+    return Loss+np.sum(regularizer)
 
-    # regularization term
-    reg_term = (reg/2)*np.sum(np.matmul(W, W_tranpose))
+def gradCE(W, b, x, y, reg):
+    W_tranpose = np.transpose(W)
+    yn=1/(1+np.exp(-np.matmul(x,W_tranpose)-b))
+    N= y.shape[0]
+    #gradient with respect to weight
+    grad=np.matmul(np.transpose(x),yn-y)  
+    grad=grad/N+reg*W
 
-    CE = loss_term+reg_term
-    return CE
+    # gradient with respect to bias
+    grad_bias=np.sum(yn-y)/N
+  
+    return grad, grad_bias
 
 
-# def gradCE(W, b, x, y, reg):
+def grad_descent_CE(W, b, train_x, train_y, alpha, epochs, reg, error_tol):
+    i = 0
+    W1 = W2 = W3 = W
+    b1 = b2 = b3 = b
+    train_loss_set1 = []
+    accuracy_set = []
+
+    # while i < epochs and abs(np.linalg.norm(w_step_size))<=error_tol:
+
+    start1 = time.time()
+    while i < epochs:
+        grad_w1, grad_b1 = gradCE(W1, b1, train_x, train_y, reg)
+
+        w_step_size1 = alpha * grad_w1
+        b_step_size1 = alpha * grad_b1
+        W1 = W1 - w_step_size1
+        b1 = b1 - b_step_size1
+        # break
+
+        train_ce1 = crossEntropyLoss(W1, b1, train_x, train_y, reg)
+        train_loss_set1.append(train_ce1)
+
+        if abs(np.linalg.norm(w_step_size1)) < error_tol:
+            break
+        i = i + 1
+    start2 = time.time()
+
+    print ("Time: ", start2 - start1)
+    W_tranpose = np.transpose(W)
+    y_predicted = 1/(1+np.exp(-np.matmul(x, W_tranpose)-b))
+    accuracy_set.append(accuracy(y_predicted, train_y))
+    print("Accuracy: ",accuracy(y_predicted, train_y))
+
+    #print(start2-start1, start3-start2, start4-start3)
+    print("Trainning model\n")
+    plt.figure(1)
+    plt.title("CE loss set: ephocs=5000 reg=0.1")
+    plt.plot(train_loss_set1)
+    pic_name = "CE_training_loss.png"
+    plt.savefig(pic_name)
+    plt.xlabel("epochs")
+    plt.ylabel("loss")
+
+    plt.figure(2)
+    plt.title("CE accur set: ephocs=5000 reg=0.1")
+    plt.plot(accuracy_set)
+    pic_name = "CE_training_accuracy.png"
+    plt.savefig(pic_name)
+    plt.xlabel("accuracy")
+    plt.ylabel("loss")
+
+    return W, b
+
+
+
 def buildGraph(beta=None, epsilon=None, lossType=None, learning_rate=None):
     # def buildGraph(lossType=None):
 
@@ -275,14 +409,13 @@ def buildGraph(beta=None, epsilon=None, lossType=None, learning_rate=None):
     reg_term = beta * tf.nn.l2_loss(W)/2
     tf.set_random_seed(421)
     loss = 0.0
-    
+
     if lossType == "MSE":
         loss_term = tf.reduce_mean(tf.reduce_mean(tf.square(y_predicted - y_target),
                                                   reduction_indices=1,
                                                   name='squared_error'),
                                    name='mean_squared_error')
         loss = loss_term/2 + reg_term
-        
 
     elif lossType == "CE":
         logits = tf.matmul(X, W) + b
@@ -292,8 +425,7 @@ def buildGraph(beta=None, epsilon=None, lossType=None, learning_rate=None):
 
     optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
     train = optimizer.minimize(loss)
-    
-    
+
     return W, b, X, y_target, y_predicted, loss, train
 
 
@@ -348,8 +480,10 @@ if __name__ == '__main__':
     plt.ylabel("loss")
     plt.show()
     '''
-    grad_descent(W, b, train_X, trainTarget, val_X, validTarget, test_X,
-                 testTarget, alpha=0.005, epochs=5000, reg=0, error_tol=0.0000001)
+    #grad_descent(W, b, train_X, trainTarget, val_X, validTarget, test_X,
+    #             testTarget, alpha=0.005, epochs=5000, reg=0, error_tol=0.0000001)
+
+    grad_descent_CE(W, b, train_X, trainTarget, alpha=0.01, epochs=5000, reg=0.1, error_tol=0.0000001)
     #new_W, new_b = grad_descent(W,b,train_X,y=trainTarget,alpha=0.005,epochs=5000,reg=0,error_tol=0.0000001)
     # mse()
     # return
