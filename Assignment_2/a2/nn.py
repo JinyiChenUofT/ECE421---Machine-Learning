@@ -19,8 +19,8 @@ train_y, valid_y, test_y = convertOneHot(trainTarget, validTarget, testTarget)
 
 s, w, h = trainData.shape #10000 samples, 28, 28
 m,n = train_y.shape
-print(s,w,h)
-print(m,n)
+#print(s,w,h)
+#print(m,n)
 
 class_names = ['A','B','C','D','E','F','G','H','I','J']
 
@@ -32,7 +32,7 @@ valid_x = validData.reshape(-1,w,h,1)
 
 
 weights = {
-    'w_con': tf.get_variable("con_filter", shape=[3,3,1,32],
+    'w_con': tf.get_variable("w_con", shape=[3,3,1,32],
                 initializer=tf.contrib.layers.xavier_initializer()),
     'w_fc1': tf.get_variable("w_fc1", shape=[14*14*32,784],
                 initializer=tf.contrib.layers.xavier_initializer()),
@@ -86,15 +86,15 @@ def conv_net(x, weights, biases):
 
     #softmax output
     out = tf.nn.softmax(fc_layer2)
-    print ("out.shape: ",out.shape)
+    #print ("out.shape: ",out.shape)
     #cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=out, labels=y))
 
     return out
 
 def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
     pred = conv_net(x, weights, biases)
-    print ("pred.shape: ", pred.shape)
-    print ("y.shape: ",y.shape)
+    #print ("pred.shape: ", pred.shape)
+    #print ("y.shape: ",y.shape)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
@@ -133,13 +133,46 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
                                                                 y: batch_y})
                 loss, acc = sess.run([cost, accuracy], feed_dict={x: batch_x,
                                                                 y: batch_y})
-                train_loss.append(loss)
-                train_accuracy.append(accuracy)
+            test_acc,valid_loss = sess.run([accuracy,cost], feed_dict={x: test_x, y : test_y})
+            train_loss.append(loss)
+            test_loss.append(valid_loss)
+            train_accuracy.append(acc)
+            test_accuracy.append(test_acc)
+            #print("Testing Accuracy:","{:.5f}".format(test_acc))
+
             if (i%10==0):
                 print("Iter " + str(i) + ", Loss= " + \
                             "{:.6f}".format(loss) + ", Training Accuracy= " + \
                             "{:.5f}".format(acc))
         print("Optimization Finished.")
+        summary_writer.close()
+        f = open('data.txt','w')
+        f.write("train loss")
+        f.write(train_loss)
+        f.write("test loss")
+        f.write(test_loss)
+        f.write("train accuracy")
+        f.write(train_accuracy)
+        f.write("test accuracy")
+        f.write(test_accuracy)
+
+        plt.figure(1)
+        plt.plot(range(len(train_loss)), train_loss, 'b', label='Training loss')
+        plt.plot(range(len(train_loss)), test_loss, 'r', label='Test loss')
+        plt.title('Training and Test loss')
+        plt.xlabel('Epochs ',fontsize=16)
+        plt.ylabel('Loss',fontsize=16)
+        plt.legend()
+        plt.show()
+
+        plt.figure(2)
+        plt.plot(range(len(train_loss)), train_accuracy, 'b', label='Training Accuracy')
+        plt.plot(range(len(train_loss)), test_accuracy, 'r', label='Test Accuracy')
+        plt.title('Training and Test Accuracy')
+        plt.xlabel('Epochs ',fontsize=16)
+        plt.ylabel('Accuracy',fontsize=16)
+        plt.legend()
+        plt.show()
 
 if __name__ == "__main__":
     #print(len(train_x))
