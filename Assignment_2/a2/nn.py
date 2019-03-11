@@ -62,11 +62,15 @@ def batch(x):
     batch_layer = tf.nn.batch_normalization(x,batch_mean,batch_var,offset=None,scale=None,variance_epsilon=1e-3)
     return batch_layer
 
-def conv_net(x, weights, biases):  
+def conv_net(x, weights, biases, beta=0):  
 
     #1st 3x3 convolutional layer + relu 
     conv_layer = conv2d(x, weights['w_con'], biases['b_con'])
-
+    
+    if (beta!=0):
+        regularizer = tf.nn.l2_loss(weights['w_con'])
+        conv_layer = tf.reduce_mean(conv_layer + beta * regularizer)
+    
     #batch normalization layer
     batch_layer = batch(conv_layer)
 
@@ -76,7 +80,11 @@ def conv_net(x, weights, biases):
     #flatten layer
     flatten_layer = tf.reshape(pool_layer, [-1, weights['w_fc1'].get_shape().as_list()[0]])
     #flatten_layer = tf.contrib.layers.flatten(pool_layer)
-
+    
+    if (beta!=0):
+        regularizer = tf.nn.l2_loss(weights['w_fc1'])
+        flatten_layer = tf.reduce_mean(flatten_layer + beta * regularizer)
+      
     #1st fc_layer + relu
     fc_layer1 = tf.add(tf.matmul(flatten_layer, weights['w_fc1']), biases['b_fc1'])
     fc_layer1 = tf.nn.relu(fc_layer1)
@@ -86,16 +94,20 @@ def conv_net(x, weights, biases):
 
     #softmax output
     out = tf.nn.softmax(fc_layer2)
-    #print ("out.shape: ",out.shape)
+    print ("out.shape: ",out.shape)
     #cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(logits=out, labels=y))
 
     return out
 
-def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
+
+def train_model(learning_rate=1e-4,training_iters=50,batch_size=32, beta=0):
     pred = conv_net(x, weights, biases)
     #print ("pred.shape: ", pred.shape)
     #print ("y.shape: ",y.shape)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
+    if (beta!=0):
+        regularizer = tf.nn.l2_loss(weights['w_fc2'])
+        cost = tf.reduce_mean(cost + beta * regularizer)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
@@ -114,6 +126,8 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
         test_loss = []
         train_accuracy = []
         test_accuracy = []
+        valid_loss = []
+        valid_accuracy = []
         summary_writer = tf.summary.FileWriter('./Output', sess.graph)
         for i in range(training_iters):
             train_X,train_Y = shuffle(train_x,train_y)
@@ -131,13 +145,16 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
                     # Calculate batch loss and accuracy
                 opt = sess.run(optimizer, feed_dict={x: batch_x,
                                                                 y: batch_y})
-                loss, acc = sess.run([cost, accuracy], feed_dict={x: batch_x,
-                                                                y: batch_y})
-            test_acc,valid_loss = sess.run([accuracy,cost], feed_dict={x: test_x, y : test_y})
+            loss, acc = sess.run([cost, accuracy], feed_dict={x: batch_x,y: batch_y})
+            test_acc,test_l = sess.run([accuracy,cost], feed_dict={x: test_x, y : test_y})
+            valid_acc,valid_l = sess.run([accuracy,cost], feed_dict={x: valid_x, y : valid_y})
             train_loss.append(loss)
-            test_loss.append(valid_loss)
+            test_loss.append(test_l)
+            valid_loss.append(valid_l)
             train_accuracy.append(acc)
             test_accuracy.append(test_acc)
+            valid_accuracy.append(valid_acc)
+
             #print("Testing Accuracy:","{:.5f}".format(test_acc))
 
             if (i%10==0):
@@ -146,6 +163,7 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
                             "{:.5f}".format(acc))
         print("Optimization Finished.")
         summary_writer.close()
+        '''
         f = open('data.txt','w')
         f.write("train loss")
         f.write(train_loss)
@@ -155,10 +173,11 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
         f.write(train_accuracy)
         f.write("test accuracy")
         f.write(test_accuracy)
-
+        '''
         plt.figure(1)
-        plt.plot(range(len(train_loss)), train_loss, 'b', label='Training loss')
-        plt.plot(range(len(train_loss)), test_loss, 'r', label='Test loss')
+        plt.plot(train_loss, 'b', label='Training loss')
+        plt.plot(test_loss, 'r', label='Test loss')
+        plt.plot(valid_loss, 'g', label='Test loss')
         plt.title('Training and Test loss')
         plt.xlabel('Epochs ',fontsize=16)
         plt.ylabel('Loss',fontsize=16)
@@ -166,8 +185,11 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32):
         plt.show()
 
         plt.figure(2)
-        plt.plot(range(len(train_loss)), train_accuracy, 'b', label='Training Accuracy')
-        plt.plot(range(len(train_loss)), test_accuracy, 'r', label='Test Accuracy')
+        plt.plot(train_accuracy, 'b', label='Training Accuracy')
+        plt.plot(test_accuracy, 'r', label='Test Accuracy')
+        plt.plot(valid_accuracy, 'g', label='Test Accuracy')
+        #plt.plot(range(len(train_loss)), train_accuracy, 'b', label='Training Accuracy')
+        #plt.plot(range(len(train_loss)), test_accuracy, 'r', label='Test Accuracy')
         plt.title('Training and Test Accuracy')
         plt.xlabel('Epochs ',fontsize=16)
         plt.ylabel('Accuracy',fontsize=16)
