@@ -66,10 +66,7 @@ def conv_net(x, weights, biases, beta=0):
 
     #1st 3x3 convolutional layer + relu 
     conv_layer = conv2d(x, weights['w_con'], biases['b_con'])
-    
-    if (beta!=0):
-        regularizer = tf.nn.l2_loss(weights['w_con'])
-        conv_layer = tf.reduce_mean(conv_layer + beta * regularizer)
+
     
     #batch normalization layer
     batch_layer = batch(conv_layer)
@@ -102,13 +99,12 @@ def conv_net(x, weights, biases, beta=0):
 
 def train_model(learning_rate=1e-4,training_iters=50,batch_size=32, beta=0):
     pred = conv_net(x, weights, biases)
-    #print ("pred.shape: ", pred.shape)
-    #print ("y.shape: ",y.shape)
+    print ("pred.shape: ", pred.shape)
+    print ("y.shape: ",y.shape)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=y))
-    if (beta!=0):
-        regularizer = tf.nn.l2_loss(weights['w_fc2'])
-        cost = tf.reduce_mean(cost + beta * regularizer)
 
+      
+      
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
 
 
@@ -121,13 +117,12 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32, beta=0):
     init = tf.global_variables_initializer()
 
     with tf.Session() as sess:
-        sess.run(init) 
-        train_loss = []
-        test_loss = []
-        train_accuracy = []
-        test_accuracy = []
-        valid_loss = []
-        valid_accuracy = []
+        sess.run(init)
+        
+        #train_loss = []
+        #test_loss = []
+        #train_accuracy = []
+        #test_accuracy = []
         summary_writer = tf.summary.FileWriter('./Output', sess.graph)
         for i in range(training_iters):
             train_X,train_Y = shuffle(train_x,train_y)
@@ -143,9 +138,9 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32, beta=0):
                 #print("batch_y.shape: ",batch_y.shape) 
                 # Run optimization op (backprop).
                     # Calculate batch loss and accuracy
-                opt = sess.run(optimizer, feed_dict={x: batch_x,
-                                                                y: batch_y})
-            loss, acc = sess.run([cost, accuracy], feed_dict={x: batch_x,y: batch_y})
+                opt = sess.run(optimizer, feed_dict={x: batch_x, y: batch_y})
+                
+            loss, acc = sess.run([cost, accuracy], feed_dict={x: train_x,y: train_y})
             test_acc,test_l = sess.run([accuracy,cost], feed_dict={x: test_x, y : test_y})
             valid_acc,valid_l = sess.run([accuracy,cost], feed_dict={x: valid_x, y : valid_y})
             train_loss.append(loss)
@@ -154,9 +149,8 @@ def train_model(learning_rate=1e-4,training_iters=50,batch_size=32, beta=0):
             train_accuracy.append(acc)
             test_accuracy.append(test_acc)
             valid_accuracy.append(valid_acc)
-
+            
             #print("Testing Accuracy:","{:.5f}".format(test_acc))
-
             if (i%10==0):
                 print("Iter " + str(i) + ", Loss= " + \
                             "{:.6f}".format(loss) + ", Training Accuracy= " + \

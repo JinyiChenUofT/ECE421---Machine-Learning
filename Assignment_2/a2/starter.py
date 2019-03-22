@@ -85,10 +85,6 @@ def error(target, prediction):
     return np.multiply((target-prediction),(target-prediction))
 
 
-def derivation_LW(last_X, y, target):
-    grad_CE = gradCE(target, y)
-    res = 2*np.multiply((np.multiply((y-target), grad_CE)), last_X)
-    return res
     
 def backPropagation(xi,sh,xh,so,wo,prediction,target):
     #xi 10000, 784
